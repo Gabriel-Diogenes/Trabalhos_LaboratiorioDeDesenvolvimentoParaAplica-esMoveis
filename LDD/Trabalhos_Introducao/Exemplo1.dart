@@ -7,6 +7,6 @@ void main(){
   stdout.write('Digite seu nome: ');
 
   String? nome = stdin.readLineSync();
-
   print('Hello, $nome!');
+
 }
