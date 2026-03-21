@@ -8,6 +8,8 @@ void main() {
 }
 
 class TelaCadastro extends StatefulWidget {
+  const TelaCadastro({super.key});
+
   @override
   _TelaCadastroState createState() => _TelaCadastroState();
 }
