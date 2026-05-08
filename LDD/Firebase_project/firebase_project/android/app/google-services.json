@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "823459707013",
+    "project_id": "seminario-lddm-firebase",
+    "storage_bucket": "seminario-lddm-firebase.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:823459707013:android:a3af3ec48ca9d5b92f51ec",
+        "android_client_info": {
+          "package_name": "com.example.firebase_project"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "823459707013-mtqr72ki68of0c600r14cegbletk11bm.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.firebase_project",
+            "certificate_hash": "5fc748d1861465538c230d86f41299f50772f7e8"
+          }
+        },
+        {
+          "client_id": "823459707013-d14mut37a2f5772c4pe9rfkv05smh7nb.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAHxKGpC0tG7gj-OUKawH0_DzUj8FEYbaQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "823459707013-d14mut37a2f5772c4pe9rfkv05smh7nb.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "823459707013-1o108crgjorh6avsogvjkuhbmelgfo1n.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.firebaseProject"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
