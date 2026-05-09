@@ -19,13 +19,11 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'App Auth Firebase',
+      title: 'App Firebase',
       theme: ThemeData(primarySwatch: Colors.blue),
-      // A mágica da navegação reativa acontece aqui:
       home: StreamBuilder<User?>(
         stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {
-          // Se tiver um usuário logado, vai pra Home. Se não, tela de Auth.
           if (snapshot.hasData) {
             return const HomeScreen();
           }

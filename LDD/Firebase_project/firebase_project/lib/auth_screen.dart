@@ -18,46 +18,39 @@ class _AuthScreenState extends State<AuthScreen> {
   final _passwordController = TextEditingController();
   final _nameController = TextEditingController();
 
-  // LOGIN COM GOOGLE
-// LOGIN COM GOOGLE ATUALIZADO
   Future<void> _signInWithGoogle() async {
     try {
-      // 1. Inicia o fluxo de login
       final GoogleSignIn googleSignIn = GoogleSignIn();
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
       
-      if (googleUser == null) return; // Usuário cancelou o login
+      if (googleUser == null) return;
 
-      // 2. Obtém os detalhes da autenticação
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
 
-      // 3. Cria uma nova credencial para o Firebase
       final OAuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
-      // 4. Faz o login no Firebase com a credencial do Google
       UserCredential userCred = await _auth.signInWithCredential(credential);
       
-      // 5. Se for um novo usuário, cria o perfil no Firestore
       final doc = await _firestore.collection('users').doc(userCred.user!.uid).get();
       if (!doc.exists) {
         await _firestore.collection('users').doc(userCred.user!.uid).set({
-          'name': googleUser.displayName,
+          'name': googleUser.displayName ?? 'Usuário Google',
+          'photo': googleUser.photoUrl ?? '',
           'createdAt': FieldValue.serverTimestamp(),
           'role': 'user',
         });
       }
     } catch (e) {
-      print("ERRO DETALHADO: $e"); // Isso ajuda a ver o erro no terminal
+      print("ERRO DETALHADO: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erro ao entrar com Google: $e'))
       );
     }
   }
 
-  // REDEFINIR SENHA
   Future<void> _resetPassword() async {
     if (_emailController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Insira o e-mail primeiro')));
@@ -80,6 +73,7 @@ class _AuthScreenState extends State<AuthScreen> {
         
         await _firestore.collection('users').doc(cred.user!.uid).set({
           'name': _nameController.text.trim(),
+          'photo': '',
           'createdAt': FieldValue.serverTimestamp(),
           'role': 'user',
         });

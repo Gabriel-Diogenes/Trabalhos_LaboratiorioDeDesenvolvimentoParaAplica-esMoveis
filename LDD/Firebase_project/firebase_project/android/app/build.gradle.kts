@@ -31,6 +31,11 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        // NOTA: Para login com Google funcionar em dispositivo real Android,
+        // registre as impressões digitais SHA-1 e SHA-256 no Firebase Console:
+        //   Projeto > Configurações > Seus apps > Android > Adicionar impressão digital
+        // Para obter as chaves de depuração locais, execute:
+        //   keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android
     }
 
     buildTypes {

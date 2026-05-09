@@ -98,6 +98,7 @@ class HomeScreen extends StatelessWidget {
                 var userData = snapshot.data!.data() as Map<String, dynamic>;
                 String name = userData['name'] ?? 'Usuário';
                 String role = userData['role'] ?? 'user';
+                String photo = userData['photo'] ?? '';
 
                 return Padding(
                   padding: const EdgeInsets.all(20.0),
@@ -105,9 +106,10 @@ class HomeScreen extends StatelessWidget {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const CircleAvatar(
+                        CircleAvatar(
                           radius: 50,
-                          child: Icon(Icons.person, size: 50),
+                          backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null,
+                          child: photo.isEmpty ? const Icon(Icons.person, size: 50) : null,
                         ),
                         const SizedBox(height: 20),
                         
