@@ -36,7 +36,6 @@ class _AuthScreenState extends State<AuthScreen> {
       final UserCredential userCred =
           await _auth.signInWithCredential(credential);
 
-      // Só cria o perfil se for o primeiro login
       final doc = await _firestore
           .collection('users')
           .doc(userCred.user!.uid)
@@ -53,15 +52,13 @@ class _AuthScreenState extends State<AuthScreen> {
         });
       }
     } on FirebaseAuthException catch (e) {
-      // CORREÇÃO: captura erros específicos do Firebase Auth (ex: conta desativada)
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(e.message ?? 'Erro no login com Google')),
         );
       }
     } catch (e) {
-      // CORREÇÃO: captura demais erros (rede, cancelamento OAuth, etc.)
-      // Removido o print() de debug — não deve ir para produção
+ 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Erro ao entrar com Google: ${e.toString()}')),
@@ -77,8 +74,7 @@ class _AuthScreenState extends State<AuthScreen> {
       );
       return;
     }
-    // CORREÇÃO: adicionado try/catch — sem isso, erros como "user-not-found"
-    // causavam crash na versão original
+
     try {
       await _auth.sendPasswordResetEmail(
           email: _emailController.text.trim());
