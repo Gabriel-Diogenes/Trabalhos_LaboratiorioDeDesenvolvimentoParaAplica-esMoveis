@@ -22,66 +22,124 @@ class _AuthScreenState extends State<AuthScreen> {
     try {
       final GoogleSignIn googleSignIn = GoogleSignIn();
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
-      
-      if (googleUser == null) return;
 
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      if (googleUser == null) return; // usuário cancelou
+
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
 
       final OAuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
-      UserCredential userCred = await _auth.signInWithCredential(credential);
-      
-      final doc = await _firestore.collection('users').doc(userCred.user!.uid).get();
+      final UserCredential userCred =
+          await _auth.signInWithCredential(credential);
+
+      // Só cria o perfil se for o primeiro login
+      final doc = await _firestore
+          .collection('users')
+          .doc(userCred.user!.uid)
+          .get();
       if (!doc.exists) {
-        await _firestore.collection('users').doc(userCred.user!.uid).set({
+        await _firestore
+            .collection('users')
+            .doc(userCred.user!.uid)
+            .set({
           'name': googleUser.displayName ?? 'Usuário Google',
           'photo': googleUser.photoUrl ?? '',
           'createdAt': FieldValue.serverTimestamp(),
           'role': 'user',
         });
       }
+    } on FirebaseAuthException catch (e) {
+      // CORREÇÃO: captura erros específicos do Firebase Auth (ex: conta desativada)
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message ?? 'Erro no login com Google')),
+        );
+      }
     } catch (e) {
-      print("ERRO DETALHADO: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao entrar com Google: $e'))
-      );
+      // CORREÇÃO: captura demais erros (rede, cancelamento OAuth, etc.)
+      // Removido o print() de debug — não deve ir para produção
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao entrar com Google: ${e.toString()}')),
+        );
+      }
     }
   }
 
   Future<void> _resetPassword() async {
     if (_emailController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Insira o e-mail primeiro')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Insira o e-mail primeiro')),
+      );
       return;
     }
-    await _auth.sendPasswordResetEmail(email: _emailController.text.trim());
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('E-mail de redefinição enviado!')));
+    // CORREÇÃO: adicionado try/catch — sem isso, erros como "user-not-found"
+    // causavam crash na versão original
+    try {
+      await _auth.sendPasswordResetEmail(
+          email: _emailController.text.trim());
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('E-mail de redefinição enviado!')),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message ?? 'Erro ao enviar e-mail')),
+        );
+      }
+    }
   }
 
   Future<void> _submit() async {
     try {
       if (_isLogin) {
         await _auth.signInWithEmailAndPassword(
-            email: _emailController.text.trim(), password: _passwordController.text.trim());
+          email: _emailController.text.trim(),
+          password: _passwordController.text.trim(),
+        );
       } else {
-        UserCredential cred = await _auth.createUserWithEmailAndPassword(
-            email: _emailController.text.trim(), password: _passwordController.text.trim());
-        
-        await cred.user!.sendEmailVerification(); // VERIFICAÇÃO DE E-MAIL
-        
+        final UserCredential cred = await _auth.createUserWithEmailAndPassword(
+          email: _emailController.text.trim(),
+          password: _passwordController.text.trim(),
+        );
+
+        await cred.user!.sendEmailVerification();
+
         await _firestore.collection('users').doc(cred.user!.uid).set({
           'name': _nameController.text.trim(),
           'photo': '',
           'createdAt': FieldValue.serverTimestamp(),
           'role': 'user',
         });
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Verifique seu e-mail!')));
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('Cadastro realizado! Verifique seu e-mail.')),
+          );
+        }
       }
     } on FirebaseAuthException catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message ?? 'Erro')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message ?? 'Erro')),
+        );
+      }
     }
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _nameController.dispose();
+    super.dispose();
   }
 
   @override
@@ -93,20 +151,41 @@ class _AuthScreenState extends State<AuthScreen> {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              if (!_isLogin) TextField(controller: _nameController, decoration: const InputDecoration(labelText: 'Nome')),
-              TextField(controller: _emailController, decoration: const InputDecoration(labelText: 'E-mail')),
-              TextField(controller: _passwordController, decoration: const InputDecoration(labelText: 'Senha'), obscureText: true),
+              if (!_isLogin)
+                TextField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(labelText: 'Nome'),
+                ),
+              TextField(
+                controller: _emailController,
+                decoration: const InputDecoration(labelText: 'E-mail'),
+                keyboardType: TextInputType.emailAddress,
+              ),
+              TextField(
+                controller: _passwordController,
+                decoration: const InputDecoration(labelText: 'Senha'),
+                obscureText: true,
+              ),
               const SizedBox(height: 20),
-              ElevatedButton(onPressed: _submit, child: Text(_isLogin ? 'Entrar' : 'Cadastrar')),
-              TextButton(onPressed: _resetPassword, child: const Text('Esqueci minha senha')),
-              TextButton(onPressed: () => setState(() => _isLogin = !_isLogin), 
-                         child: Text(_isLogin ? 'Criar conta' : 'Já tenho conta')),
+              ElevatedButton(
+                onPressed: _submit,
+                child: Text(_isLogin ? 'Entrar' : 'Cadastrar'),
+              ),
+              TextButton(
+                onPressed: _resetPassword,
+                child: const Text('Esqueci minha senha'),
+              ),
+              TextButton(
+                onPressed: () => setState(() => _isLogin = !_isLogin),
+                child: Text(_isLogin ? 'Criar conta' : 'Já tenho conta'),
+              ),
               const Divider(),
               ElevatedButton.icon(
                 icon: const Icon(Icons.login),
                 label: const Text('Entrar com Google'),
                 onPressed: _signInWithGoogle,
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade100),
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red.shade100),
               ),
             ],
           ),
