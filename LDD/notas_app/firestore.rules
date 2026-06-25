@@ -1,0 +1,44 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /users/{uid} {
+
+      allow read: if request.auth != null && request.auth.uid == uid;
+
+      allow create: if request.auth != null
+                    && request.auth.uid == uid
+                    && request.resource.data.role == 'user';
+
+      allow update: if request.auth != null
+                    && request.auth.uid == uid
+                    && !('role' in request.resource.data.diff(resource.data).affectedKeys());
+
+      allow delete: if false;
+    }
+
+    // Notas pessoais: cada usuário só acessa as próprias notas.
+    match /notes/{uid}/items/{noteId} {
+
+      allow read: if request.auth != null && request.auth.uid == uid;
+
+      allow create, update: if request.auth != null
+                            && request.auth.uid == uid;
+
+      // Bônus: impede excluir notas criadas há mais de 7 dias.
+      allow delete: if request.auth != null
+                    && request.auth.uid == uid
+                    && request.time < resource.data.createdAt + duration.value(7, 'd');
+    }
+
+    match /admin_data/{docId} {
+      allow read, write: if request.auth != null
+                         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
